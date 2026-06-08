@@ -185,13 +185,18 @@ function buildManifest(model) {
 }
 
 // --- adherence lint config ----------------------------------------------------
-// Parse each component's `<Stem>Props` interface from its .d.ts to derive a JSX
-// prop whitelist and string-union value selectors. This is advisory lint config;
-// it intentionally keys off the manifest component set.
+// The web compiler derives one JSX prop-whitelist per component .d.ts file from
+// the FIRST exported interface in that file — its name minus a trailing "Props"
+// is the JSX element, its properties are the allowed props — then orders the
+// components alphabetically. For collection components (Dropdown/RadioGroup/
+// TabList) the first interface is the item shape (DropdownOption/RadioOption/
+// TabItem), so the rule targets the item element, not the container; for a file
+// with several interfaces (Card → CardProps, CardHeaderProps) only the first is
+// used. This is advisory lint config.
 const ALWAYS_PROPS = ['key', 'ref', 'className', 'style', 'children'];
 
-function parsePropsInterface(dtsSrc, compName) {
-  const re = new RegExp(`interface\\s+${compName}Props\\b[^{]*\\{`, 'm');
+function parseFirstInterface(dtsSrc) {
+  const re = /(?:export\s+)?interface\s+([A-Za-z][A-Za-z0-9]*)\b[^{]*\{/;
   const m = re.exec(dtsSrc);
   if (!m) return null;
   // capture balanced-ish body (interfaces here are flat, no nested braces)
@@ -206,16 +211,20 @@ function parsePropsInterface(dtsSrc, compName) {
     i++;
   }
   const props = [];
+  // split single-line interfaces (`{ value: string; label: ... }`) onto rows so
+  // the line-anchored prop regex matches every member, while keeping function
+  // types like `onChange?: (value: string) => void` from yielding a bogus prop.
+  const norm = body.replace(/;/g, ';\n');
   const propRe = /(?:^|\n)\s*([A-Za-z][A-Za-z0-9]*)\??\s*:\s*([^;]+);/g;
   let pm;
-  while ((pm = propRe.exec(body))) {
+  while ((pm = propRe.exec(norm))) {
     const name = pm[1];
     const type = pm[2].trim();
     const union = [...type.matchAll(/'([^']+)'/g)].map((u) => u[1]);
     const isPureUnion = /^(\s*'[^']+'\s*\|?\s*)+$/.test(type);
     props.push({ name, values: isPureUnion && union.length ? union : null });
   }
-  return props;
+  return { name: m[1].replace(/Props$/, ''), props };
 }
 
 function buildAdherence(model) {
@@ -246,28 +255,31 @@ function buildAdherence(model) {
     return s;
   };
 
-  const compNames = [];
+  // one adherence component per module .d.ts: the file's first exported interface
+  const components = [];
+  const seenDts = new Set();
   for (const s of model.allSources) {
-    if (!s.isModule) continue;
-    const dts = readDts(s.dtsPath);
-    for (const name of s.exports.filter((n) => /^[A-Z]/.test(n))) {
-      const props = parsePropsInterface(dts, name);
-      if (!props) continue;
-      compNames.push(name);
-      const allowed = [...props.map((p) => p.name), ...ALWAYS_PROPS];
-      const allowedRe = `^(?:${allowed.join('|')})$`;
+    if (!s.isModule || seenDts.has(s.dtsPath)) continue;
+    seenDts.add(s.dtsPath);
+    const iface = parseFirstInterface(readDts(s.dtsPath));
+    if (iface) components.push(iface);
+  }
+  components.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+
+  for (const { name, props } of components) {
+    const allowed = [...props.map((p) => p.name), ...ALWAYS_PROPS];
+    const allowedRe = `^(?:${allowed.join('|')})$`;
+    syntax.push({
+      selector: `JSXOpeningElement[name.name='${name}'] > JSXAttribute > JSXIdentifier[name!=/${allowedRe}/]`,
+      message: `<${name}> doesn't accept that prop. Declared props: ${props.map((p) => p.name).join(', ')}.`,
+    });
+    for (const p of props) {
+      if (!p.values) continue;
+      const valRe = `^(?:${p.values.join('|')})$`;
       syntax.push({
-        selector: `JSXOpeningElement[name.name='${name}'] > JSXAttribute > JSXIdentifier[name!=/${allowedRe}/]`,
-        message: `<${name}> doesn't accept that prop. Declared props: ${props.map((p) => p.name).join(', ')}.`,
+        selector: `JSXOpeningElement[name.name='${name}'] > JSXAttribute[name.name='${p.name}'] > Literal[value!=/${valRe}/]`,
+        message: `<${name}> ${p.name} must be one of ${p.values.map((v) => `'${v}'`).join(' | ')}.`,
       });
-      for (const p of props) {
-        if (!p.values) continue;
-        const valRe = `^(?:${p.values.join('|')})$`;
-        syntax.push({
-          selector: `JSXOpeningElement[name.name='${name}'] > JSXAttribute[name.name='${p.name}'] > Literal[value!=/${valRe}/]`,
-          message: `<${name}> ${p.name} must be one of ${p.values.map((v) => `'${v}'`).join(' | ')}.`,
-        });
-      }
     }
   }
 
@@ -275,7 +287,7 @@ function buildAdherence(model) {
   const tokenKinds = {};
   for (const t of model.tokens) tokenKinds[t.name] = t.kind;
   const componentsMap = {};
-  for (const name of compNames.sort()) componentsMap[name] = { replaces: [] };
+  for (const { name } of components) componentsMap[name] = { replaces: [] };
 
   return {
     plugins: ['react', 'import'],
@@ -324,8 +336,8 @@ const w = (name, content) => {
 };
 
 w('_ds_bundle.js', bundle);
-w('_ds_manifest.json', JSON.stringify(manifest, null, 2) + '\n');
-w('_adherence.oxlintrc.json', JSON.stringify(adherence, null, 2) + '\n');
+w('_ds_manifest.json', JSON.stringify(manifest, null, 2));
+w('_adherence.oxlintrc.json', JSON.stringify(adherence, null, 2));
 
 const hist = model.tokenHist;
 const histStr = Object.keys(hist).sort().map((k) => `${k} ${hist[k]}`).join(', ');
