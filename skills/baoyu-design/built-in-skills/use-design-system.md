@@ -37,7 +37,7 @@ Before building, confirm with your harness's Ask-Question tool (Claude Code: `As
 2. **Which design system(s)** — list what discovery found, **multiSelect** so the user can pick **none** (free design), **one**, or **several**. With several selected, the **first selection** is the primary by default; confirm if they want a different primary.
 3. **(Optional) A starting point** — if a chosen system exposes `startingPoints[]`, offer them as seeds; otherwise offer its `cards[]` as reference or let the user design from scratch.
 
-If the user picks no design system, skip the rest and design normally (no `_ds/`, no `designSystems` in `meta.json`).
+If the user picks no design system, skip the rest of this flow (steps 3–7) and design normally — no `_ds/` folder, `designSystems: []`, `primaryDesignSystem: null`. You **still** get a `meta.json`: `record-asset.mjs` creates it (with `type`/`createdAt`/`updatedAt`) the first time you record a deliverable as an asset — see ["Recording deliverables as assets"](#recording-deliverables-as-assets) below.
 
 ### 3. Import each selected design system
 
@@ -102,6 +102,13 @@ The script writes/merges `<project>/meta.json` for you. Shape:
   ],
   "primaryDesignSystem": "fluent2-design-system",
   "startingPoint": { "name": "...", "kind": "screen|component", "dsSlug": "...", "section": "..." },
+  "assets": {
+    "Tweet Composer": {
+      "versions": [
+        { "path": "Tweet Composer.html", "createdAt": "<ISO>", "status": "needs-review", "subtitle": "Compose + thread view", "viewport": { "width": 1340, "height": 872 } }
+      ]
+    }
+  },
   "createdAt": "<ISO>",
   "updatedAt": "<ISO>"
 }
@@ -109,7 +116,8 @@ The script writes/merges `<project>/meta.json` for you. Shape:
 
 - `designSystems` is an **array** (0..N). No system → `[]` and `primaryDesignSystem: null`.
 - `primaryDesignSystem` points at one entry's `slug`, independent of array order. It decides CSS precedence (its `<link>` loads last), the default target for "update / add a component", and records the project's main visual language.
-- The script merges — it preserves orchestrator-written fields (`title`, `prompt`, `startingPoint`, …), sets `type:"design"` if absent, sets `createdAt` once, and bumps `updatedAt` each run. Add `title`/`prompt`/`startingPoint` yourself when creating the project.
+- `assets` records the project's **UI entry points** (the HTML pages / `.dc.html` components you'd show the user) — a map keyed by display name, each with a `versions[]` list. It is **independent of `designSystems`** and present even when no design system is used. Each version is `{ path, createdAt, status, subtitle?, viewport?{width,height?}, chatId?, section? }`, with `path` project-relative and `status ∈ needs-review|approved|changes-requested`. Don't hand-write this — `record-asset.mjs` maintains it (see "Recording deliverables as assets" below).
+- The script merges — it preserves orchestrator-written fields (`title`, `prompt`, `startingPoint`, `assets`, …), sets `type:"design"` if absent, sets `createdAt` once, and bumps `updatedAt` each run. Add `title`/`prompt`/`startingPoint` yourself when creating the project.
 
 ### 7. (Optional) Sanity-check the copy
 
@@ -120,6 +128,34 @@ node <skill>/agents/check-design-system.mjs <projectDir>/_ds/<slug>
 ```
 
 **Expect "Components: (none)" and "Starting points: (none)" here** — and that's fine. A consumed copy ships the compiled `_ds_bundle.js`, not the source `.jsx`/`.d.ts`, so the checker (which discovers components from source) finds none. What it *does* confirm is that the global-CSS `@import` closure resolves and the tokens are present. A clean exit (0) means the copy is wired correctly; to re-validate components, run the checker against the DS **source** instead.
+
+## Recording deliverables as assets
+
+`meta.json` also indexes the project's **deliverables** — the HTML pages and `.dc.html` components you'd actually show the user — under `assets` (shape in step 6 above). This is **independent of design systems**: every project has deliverables, so it applies even to a project that imported no system. Don't hand-edit `assets`; the `record-asset.mjs` helper maintains it — and it **bootstraps `meta.json` itself** when the project has none yet (the no-design-system case):
+
+```
+node <skill>/agents/record-asset.mjs <projectDir> <htmlPath> [flags]
+```
+
+`<htmlPath>` is the deliverable, project-relative (e.g. `Welcome.html`); an absolute or `<projectDir>`-prefixed path is normalized to project-relative POSIX for you. Flags:
+
+- `--name "<display name>"` — the asset's key. Omit to derive it from the filename (`Welcome.html` → `Welcome`, `Card.dc.html` → `Card`).
+- `--inherit-from <existingPath>` — group this file under the asset that already owns `<existingPath>` (use for a new *version* of an existing deliverable). Resolved to a name before the filename fallback.
+- `--subtitle "<text>"`; `--width <n>` / `--height <n>` (viewport — `--height` requires `--width`); `--section "<text>"`.
+- `--status needs-review|approved|changes-requested` — defaults to `needs-review`.
+- `--chat-id <id>` — optional; normally omitted in Claude Code (no chat-id surface), kept for app-hub parity.
+
+**Record vs. update.** Each asset owns an ordered `versions[]`. Re-recording a `path` that's **already** under that asset **updates it in place** (status is rewritten; supplied subtitle/viewport/section overwrite; `createdAt` is preserved). A path **not** yet present **appends** a new version with a fresh `createdAt`. So a redesign saved as a new file becomes a new version; re-touching the same file is an in-place update.
+
+**Status lifecycle.** Record at `needs-review` (the default) when you create the deliverable. After the user reviews it, re-record the **same** path with `--status approved` or `--status changes-requested` to flip the status in place.
+
+**Unrecord** — when a deliverable is deleted or renamed, drop it:
+
+```
+node <skill>/agents/record-asset.mjs <projectDir> --remove [<htmlPath>] [--name "<n>"] [--path <relPath>]
+```
+
+A path removes that one version (scoped to `--name` if also given); `--name` alone removes the whole asset. An asset whose last version is removed is deleted, and `assets` is dropped entirely once empty. Running `--remove` against a missing `meta.json` is a no-op — it won't create an empty file.
 
 ## Updating a project later
 
