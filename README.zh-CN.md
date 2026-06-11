@@ -112,7 +112,7 @@ skills/baoyu-design/
 │   ├── claude.md         # Claude Code 的工具映射
 │   ├── cursor.md         # Cursor 的工具映射
 │   └── codex.md          # Codex Agent 的工具映射
-├── built-in-skills/      # 24 个专项子技能（幻灯片、移动端、导出……）
+├── built-in-skills/      # 专项子技能（幻灯片、移动端、导入、导出……）
 └── starter-components/   # 设备外壳、幻灯片舞台、画布、动画引擎……
 ```
 

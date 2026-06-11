@@ -111,7 +111,7 @@ skills/baoyu-design/
 │   ├── claude.md         # Tool map for Claude Code
 │   ├── cursor.md         # Tool map for Cursor
 │   └── codex.md          # Tool map for Codex Agent
-├── built-in-skills/      # 24 specialized prompts (decks, mobile, export, …)
+├── built-in-skills/      # Specialized prompts (decks, mobile, import, export, …)
 └── starter-components/   # Device frames, deck stage, canvas, animation engine, …
 ```
 
