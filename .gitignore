@@ -146,3 +146,7 @@ vite.config.ts.timestamp-*
 .claude/launch.json
 
 designs/
+
+# IDE / local agent config
+.idea/
+.claude/settings.local.json
