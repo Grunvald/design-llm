@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node tools/ds-gate/check-adherence.mjs --hook"
+            "command": "node skills/baoyu-design/agents/check-adherence.mjs --hook"
           }
         ]
       }

@@ -49,3 +49,4 @@ You are an expert designer producing design artifacts as HTML on the user's beha
 ## Notes
 - `system-prompt.md` is the single source of truth for craft; `references/<harness>.md` is the single source of truth for which tool to call. This file just orchestrates the entry flow.
 - Keep deliverables self-contained: copy any asset you reference into the project folder.
+- **Enforcement & feedback** (this fork) → read [`built-in-skills/adherence-and-feedback.md`](built-in-skills/adherence-and-feedback.md). For any project **bound** to a design system, run `agents/check-adherence.mjs` (or wire it as a Stop hook) before finishing — a bound project may use only system tokens and components, so add a missing token/component to the system first, then use it. To collect element-level feedback on a preview, serve it with `agents/annotate/server.mjs` and apply pins from the project's `annotations.json`.
