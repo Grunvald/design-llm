@@ -1,17 +1,7 @@
 ---
-name: baoyu-design
-description: >-
-  Create polished design artifacts as self-contained HTML: UI mockups, interactive
-  prototypes, wireframes, landing pages, dashboards, app screens, mobile apps, slide
-  decks (a.k.a. PPT / PowerPoint presentations), and visual explorations. Use whenever
-  the user asks to design, mock up, prototype, wireframe, visualize, explore, or make a
-  PPT/deck for an interface, product screen, user flow, content layout, visual artifact,
-  or pitch/deck concept, even if they do not say "design". Also use to export a deck
-  built with this skill to PowerPoint (PPT/PPTX) — but only decks authored here
-  (deck-stage / this skill's slide-structured HTML), NOT arbitrary HTML, so confirm the
-  target is such a deck first. Also use for setting up, importing, or authoring reusable
-  design systems, UI kits, brand tokens, or component libraries. Harness-agnostic for
-  Claude Code, Cursor, Codex Agent, and similar file-capable agents.
+name: design-studio
+description: Generate design artifacts (UI mockups, prototypes, wireframes, decks, design systems) as self-contained HTML. Explicit-invoke only.
+disable-model-invocation: true
 ---
 
 # Design

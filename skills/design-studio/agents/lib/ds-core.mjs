@@ -1,4 +1,4 @@
-// ds-core.mjs — shared, write-nothing parser for the portable baoyu-design
+// ds-core.mjs — shared, write-nothing parser for the portable design-studio
 // design-system compiler + checker. Node stdlib only (node:fs, node:path,
 // node:crypto). It builds a full project model from a design-system folder:
 // global CSS / token closure, classified tokens, component modules + exports,

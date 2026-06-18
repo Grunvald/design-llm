@@ -1,4 +1,4 @@
-# baoyu-design
+# design-studio
 
 **Run Claude Design on your own local agent — Cursor, Claude Code, Claude Desktop, or any file‑capable coding agent.**
 
@@ -6,7 +6,7 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg) ![Best with Opus 4.8](https://img.shields.io/badge/Best%20with-Opus%204.8-d97757) ![Harness](https://img.shields.io/badge/Cursor%20%C2%B7%20Claude%20Code%20%C2%B7%20Codex-supported-1f6feb)
 
-`baoyu-design` packages **Claude Design** — the design engine behind [claude.ai/design](https://claude.ai/design) — as a portable **Agent Skill**. Drop it into a local agent and you get most of what the website does, right inside your editor: polished UI mockups, interactive prototypes, wireframes, landing pages, dashboards, mobile apps, and slide decks — all produced as self‑contained HTML.
+`design-studio` packages **Claude Design** — the design engine behind [claude.ai/design](https://claude.ai/design) — as a portable **Agent Skill**. Drop it into a local agent and you get most of what the website does, right inside your editor: polished UI mockups, interactive prototypes, wireframes, landing pages, dashboards, mobile apps, and slide decks — all produced as self‑contained HTML.
 
 No website, no separate subscription, no upload step. The agent already on your machine does the work, and every artifact stays in your repo.
 
@@ -18,7 +18,7 @@ The same Reader Mac App prompt was used in Cursor, Codex, Claude, and Claude Des
 
 | Cursor | Codex | Claude | Claude Design |
 |---|---|---|---|
-| <img src="assets/screenshots/cursor-reader-mac-app.webp" alt="Cursor running baoyu-design" width="240"> | <img src="assets/screenshots/codex-reader-mac-app.webp" alt="Codex running baoyu-design" width="240"> | <img src="assets/screenshots/claude-reader-mac-app.webp" alt="Claude running baoyu-design" width="240"> | <img src="assets/screenshots/claude-design-reader-mac-app.webp" alt="Claude Design running the same Reader Mac App prompt" width="240"> |
+| <img src="assets/screenshots/cursor-reader-mac-app.webp" alt="Cursor running design-studio" width="240"> | <img src="assets/screenshots/codex-reader-mac-app.webp" alt="Codex running design-studio" width="240"> | <img src="assets/screenshots/claude-reader-mac-app.webp" alt="Claude running design-studio" width="240"> | <img src="assets/screenshots/claude-design-reader-mac-app.webp" alt="Claude Design running the same Reader Mac App prompt" width="240"> |
 
 <details>
 <summary>Prompt used for all screenshots</summary>
@@ -96,7 +96,7 @@ The skill drives a full design process — clarifying questions → gathering de
 | **Export & handoff** | Standalone HTML · PDF · PPTX (editable) · PPTX (screenshots) · Video (MP4) · Send to Figma · Send to Canva · Handoff to Claude Code |
 | **AI assets & integration** | Gemini image generation · Call Claude from prototypes · Read PDF |
 
-**Starter components** (in [`starter-components/`](skills/baoyu-design/starter-components/)) save the agent from hand‑rolling the basics: iOS / Android / macOS / browser frames, a pan‑zoom design canvas, a slide‑deck stage, a timeline animation engine, a tweaks panel, and a fillable image slot.
+**Starter components** (in [`starter-components/`](skills/design-studio/starter-components/)) save the agent from hand‑rolling the basics: iOS / Android / macOS / browser frames, a pan‑zoom design canvas, a slide‑deck stage, a timeline animation engine, a tweaks panel, and a fillable image slot.
 
 ---
 
@@ -105,7 +105,7 @@ The skill drives a full design process — clarifying questions → gathering de
 The skill is plain Markdown plus a few JSX/JS scaffolds — no build step, no runtime.
 
 ```
-skills/baoyu-design/
+skills/design-studio/
 ├── SKILL.md              # Entry point — orchestrates the whole flow
 ├── system-prompt.md      # The design methodology & craft standards (source of truth)
 ├── references/
@@ -130,29 +130,29 @@ When you ask for a design, the agent reads `SKILL.md`, loads the core methodolog
 
 ### Install
 
-**Recommended — the `skills` CLI.** [`npx skills`](https://github.com/vercel-labs/skills) (from Vercel Labs) reads this repo, finds `skills/baoyu-design/`, and drops it into the right folder for whatever agent it detects:
+**Recommended — the `skills` CLI.** [`npx skills`](https://github.com/vercel-labs/skills) (from Vercel Labs) reads this repo, finds `skills/design-studio/`, and drops it into the right folder for whatever agent it detects:
 
 ```bash
 # Install into the current project (auto‑detects your agent)
-npx skills add JimLiu/baoyu-design
+npx skills add Grunvald/design-llm
 
 # …or install globally, for every project
-npx skills add JimLiu/baoyu-design -g
+npx skills add Grunvald/design-llm -g
 
 # Target a specific agent explicitly
-npx skills add JimLiu/baoyu-design --agent claude-code
-npx skills add JimLiu/baoyu-design --agent cursor
-npx skills add JimLiu/baoyu-design --agent codex
+npx skills add Grunvald/design-llm --agent claude-code
+npx skills add Grunvald/design-llm --agent cursor
+npx skills add Grunvald/design-llm --agent codex
 
 # Just list what's in the repo first
-npx skills add JimLiu/baoyu-design --list
+npx skills add Grunvald/design-llm --list
 ```
 
 It installs to `.claude/skills/` for Claude Code and `.agents/skills/` for Cursor/Codex-style agents (add `-g` for the `~/`‑level user install).
 
 **Alternative — hand the repo URL to your agent.** Don't want to install anything? Paste the URL into chat and let the agent fetch the skill itself:
 
-> Read https://github.com/JimLiu/baoyu-design and follow its `skills/baoyu-design/SKILL.md` to design a settings screen for a meditation app.
+> Read https://github.com/Grunvald/design-llm and follow its `skills/design-studio/SKILL.md` to design a settings screen for a meditation app.
 
 The agent clones or fetches the repo, loads `SKILL.md`, and proceeds — perfect for a one‑off.
 
@@ -162,7 +162,7 @@ Once the skill is installed (or fetched), just describe a design task in plain l
 
 > Design 3 hi‑fi variations of a settings screen for a meditation app.
 
-In Claude Code you can also trigger it explicitly with `/baoyu-design`; in Codex, mention `$baoyu-design` when skills are available. The agent asks a few clarifying questions, builds the HTML under `designs/`, and previews it over `localhost`. **Point at any element in the live preview and say what to change** — the agent edits the underlying source for a fast, visual second pass.
+In Claude Code you can also trigger it explicitly with `/design-studio`; in Codex, mention `$design-studio` when skills are available. The agent asks a few clarifying questions, builds the HTML under `designs/`, and previews it over `localhost`. **Point at any element in the live preview and say what to change** — the agent edits the underlying source for a fast, visual second pass.
 
 ### Preview server
 
@@ -221,7 +221,7 @@ When the deck is ready, **export it to PowerPoint by saying so in the same conve
 - **Editable** — native PowerPoint text, shapes, and images you can keep editing in PowerPoint or Keynote, laid out to closely match the web deck.
 - **Screenshots** — one full‑bleed PNG per slide: pixel‑perfect, but flat.
 
-> **Running locally:** on `claude.ai/design`, PPTX export is a built‑in `gen_pptx` tool — and that tool isn't there when you run the skill on your own agent. So the skill ships its own: a local CLI (`agents/gen-pptx/`) that drives headless Chromium via Playwright and writes the `.pptx` with PptxGenJS. In Claude Code it runs after a one‑time build (`cd skills/baoyu-design/agents/gen-pptx && npm install && npx playwright install chromium && npm run build`); from then on the agent serves the deck and invokes the CLI for you.
+> **Running locally:** on `claude.ai/design`, PPTX export is a built‑in `gen_pptx` tool — and that tool isn't there when you run the skill on your own agent. So the skill ships its own: a local CLI (`agents/gen-pptx/`) that drives headless Chromium via Playwright and writes the `.pptx` with PptxGenJS. In Claude Code it runs after a one‑time build (`cd skills/design-studio/agents/gen-pptx && npm install && npx playwright install chromium && npm run build`); from then on the agent serves the deck and invokes the CLI for you.
 
 ### How gen_pptx works
 

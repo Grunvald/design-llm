@@ -1,6 +1,6 @@
 // helpers.mjs — shared fixtures + runners for the agent-script tests.
 // Run from the repo root with `npm test`, or directly:
-//   node --test 'skills/baoyu-design/agents/tests/*.test.mjs'
+//   node --test 'skills/design-studio/agents/tests/*.test.mjs'
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -14,7 +14,7 @@ export const AGENTS_DIR = path.resolve(
 );
 
 // per-test temp dir, removed when the test (incl. subtests) finishes
-export function tmpdir(t, prefix = 'baoyu-test-') {
+export function tmpdir(t, prefix = 'design-studio-test-') {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   return dir;

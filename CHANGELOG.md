@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `baoyu-design` are tracked in this file.
+All notable changes to `design-studio` are tracked in this file.
 
 ## Unreleased
 
@@ -67,9 +67,9 @@ All notable changes to `baoyu-design` are tracked in this file.
 
 ### Added
 
-- Added Codex Agent support with `skills/baoyu-design/references/codex.md`, covering question asking, browser preview, screenshots, debugging, deliverable surfacing, and subagent verification defaults.
+- Added Codex Agent support with `skills/design-studio/references/codex.md`, covering question asking, browser preview, screenshots, debugging, deliverable surfacing, and subagent verification defaults.
 - Added English and Simplified Chinese README files.
-- Added the portable `baoyu-design` Agent Skill, core design methodology, built-in skill prompts, starter components, and harness reference docs for Claude Code and Cursor.
+- Added the portable `design-studio` Agent Skill, core design methodology, built-in skill prompts, starter components, and harness reference docs for Claude Code and Cursor.
 - Added the initial repository files and MIT license.
 
 ### Changed

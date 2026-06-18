@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node skills/baoyu-design/agents/check-adherence.mjs --hook"
+            "command": "node skills/design-studio/agents/check-adherence.mjs --hook"
           }
         ]
       }

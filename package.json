@@ -1,7 +1,7 @@
 {
-  "name": "baoyu-design",
+  "name": "design-studio",
   "private": true,
   "scripts": {
-    "test": "node --test 'skills/baoyu-design/agents/tests/*.test.mjs'"
+    "test": "node --test 'skills/design-studio/agents/tests/*.test.mjs'"
   }
 }
