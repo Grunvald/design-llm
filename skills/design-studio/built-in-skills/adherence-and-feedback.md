@@ -51,6 +51,42 @@ node <skill>/agents/annotate/server.mjs --root designs --port 4311
 # then open http://localhost:4311/<project>/<file>.html
 ```
 
-The overlay adds a floating **Annotate** toggle. In annotate mode the block under the cursor is highlighted; clicking it opens a comment box; saved comments render as numbered pins (click a pin to view or delete). Each comment is stored with a CSS selector, a DOM ancestry chain, and a text snippet — the same shape the upstream "Review context" section expects.
+The overlay adds a floating **Annotate** toggle. In annotate mode the block under the cursor is highlighted; clicking it opens a comment box; saved comments render as numbered pins (click a pin to view or delete). Each comment is stored with a CSS selector, a DOM ancestry chain, a text snippet, the page it was pinned on, and a **kind** — the same shape the upstream "Review context" section expects, plus the kind.
 
-To act on feedback: read `designs/<project>/annotations.json`, locate each element by its `selector` (fall back to the `domPath`/`snippet` if the page changed), apply the requested edit to the source, and delete the resolved annotation (`DELETE /__annotations?page=<page>&id=<id>`, or remove it from the file) so its pin clears.
+### Two streams: `design` vs `code`
+
+When composing a comment the user picks its kind (the composer's **Design / Code** toggle; pins are color-coded — indigo for design, amber for code):
+
+- **`design`** — a change the *design* agent applies to the mockup itself: visuals, or mockup-level behavior (hover, states, transitions on a card).
+- **`code`** — a structural/behavioral change that belongs in the *real codebase*, just easier to point at on the mockup. The coding agent implements it in the app's own components; the pin is only the visual reference.
+
+Turn the collected pins into two specs with `agents/annotate/build-specs.mjs`:
+
+```bash
+node <skill>/agents/annotate/build-specs.mjs --root designs --out .
+# → design-spec.md (design pins) and code-spec.md (code pins); an empty stream writes no file
+```
+
+`code-spec.md` is the bridge to the real project — feed it to a coding agent the way [`handoff-to-claude-code.md`](handoff-to-claude-code.md) describes; `design-spec.md` goes to the design agent. After applying a pin, delete the resolved annotation (`DELETE /__annotations?page=<page>&id=<id>`, or remove it from the file) so its pin clears.
+
+### Pinning on the real running app (dev widget)
+
+The same overlay can sit on top of a real app — no proxy. Run the server in **app mode** with a single shared store, and load the overlay (in development only) from a different origin; CORS is enabled:
+
+```bash
+node <skill>/agents/annotate/server.mjs --store .annotate/annotations.json --port 4311
+```
+```html
+<script>window.__ANNOTATE_BASE="http://localhost:4311";</script>
+<script src="http://localhost:4311/__annotate/overlay.js"></script>
+```
+
+Pins persist to the `--store` file keyed by each page's route; point `build-specs.mjs --store .annotate/annotations.json` at the same file. The store keeps the same flat-array shape as the per-directory mockup files, so a project can mix both.
+
+### Installing into a consuming project
+
+Installed as a devDependency, this package exposes path-free commands (`design-annotate`, `design-specs`) and an init step that drops the skill into the project and prints the dev snippet above:
+
+```bash
+npx design-studio-init        # copies the skill → .claude/skills/design-studio/
+```

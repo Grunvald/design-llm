@@ -4,13 +4,22 @@
 (function () {
   "use strict";
 
+  // BASE lets the overlay talk to a remote annotate server (real-app dev widget,
+  // loaded from a different origin); empty = same-origin (static mockup mode).
+  var BASE = window.__ANNOTATE_BASE || "";
   var PAGE = window.__ANNOTATE_PAGE || location.pathname;
-  var API = "/__annotations?page=" + encodeURIComponent(PAGE);
+  var API = BASE + "/__annotations?page=" + encodeURIComponent(PAGE);
+
+  // A pin is either a "design" change (the design agent edits the mockup) or a
+  // "code" change (the coding agent edits the real codebase, using the pin as a
+  // visual reference). The two streams build two separate specs.
+  var KIND_COLORS = { design: "#4f46e5", code: "#d97706" };
+  function kindColor(k) { return KIND_COLORS[k] || KIND_COLORS.design; }
 
   var state = {
     mode: false, // annotate mode on/off
     hovered: null, // element currently under cursor
-    annotations: [], // [{id, selector, domPath, snippet, text, createdAt}]
+    annotations: [], // [{id, selector, domPath, snippet, text, kind, createdAt}]
   };
 
   // --- element identity ---------------------------------------------------
@@ -78,9 +87,13 @@
       "#__ann_btn { position: fixed; right: 20px; bottom: 20px; z-index: 2147483646; height: 44px; padding: 0 18px; border-radius: 999px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; background: #14181f; color: #fff; box-shadow: 0 6px 24px rgba(0,0,0,.22); display: flex; align-items: center; gap: 8px; }" +
       "#__ann_btn.on { background: #4f46e5; }" +
       "#__ann_btn .badge { background: rgba(255,255,255,.22); border-radius: 999px; padding: 1px 7px; font-size: 12px; }" +
-      ".__ann_pin { position: absolute; z-index: 2147483641; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 999px 999px 999px 2px; background: #4f46e5; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); border: 2px solid #fff; }" +
+      ".__ann_pin { position: absolute; z-index: 2147483641; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 999px 999px 999px 2px; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); border: 2px solid #fff; }" +
       "#__ann_pop { position: fixed; z-index: 2147483647; width: 300px; background: #fff; border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,.28); border: 1px solid #e6e9ef; padding: 14px; }" +
       "#__ann_pop .ctx { font-size: 12px; color: #5c6675; background: #f6f7f9; border-radius: 6px; padding: 6px 8px; margin-bottom: 10px; word-break: break-word; max-height: 60px; overflow: auto; }" +
+      "#__ann_pop .kinds { display: flex; gap: 6px; margin-bottom: 10px; }" +
+      "#__ann_pop .kind { flex: 1; height: 32px; border: 1px solid #e6e9ef; border-radius: 8px; background: #fff; font-size: 12px; font-weight: 600; color: #5c6675; cursor: pointer; }" +
+      "#__ann_pop .kind.sel { color: #fff; border-color: transparent; }" +
+      "#__ann_pop .kbadge { display: inline-block; vertical-align: middle; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; }" +
       "#__ann_pop textarea { width: 100%; min-height: 72px; resize: vertical; border: 1px solid #e6e9ef; border-radius: 8px; padding: 8px 10px; font-size: 14px; }" +
       "#__ann_pop .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }" +
       "#__ann_pop button { height: 34px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #e6e9ef; background: #fff; }" +
@@ -181,22 +194,43 @@
   function openComposer(el, x, y) {
     closePopover();
     var target = { selector: cssPath(el), domPath: domPath(el), snippet: snippet(el) };
+    var kind = "design";
     popover = document.createElement("div");
     popover.id = "__ann_pop";
     popover.innerHTML =
       '<div class="ctx"><b>' + escapeHtml(labelFor(el)) + "</b>" +
       (target.snippet ? " — " + escapeHtml(target.snippet) : "") + "</div>" +
+      '<div class="kinds">' +
+      '<button class="kind" data-kind="design">🎨 Design</button>' +
+      '<button class="kind" data-kind="code">⌘ Code</button>' +
+      "</div>" +
       '<textarea placeholder="What should change here?"></textarea>' +
       '<div class="row"><button class="cancel">Cancel</button><button class="primary save">Save</button></div>';
     root.appendChild(popover);
     placePopover(x, y);
+    var kindBtns = popover.querySelectorAll(".kind");
+    var saveBtn = popover.querySelector(".save");
+    function selectKind(k) {
+      kind = k;
+      Array.prototype.forEach.call(kindBtns, function (b) {
+        var on = b.dataset.kind === k;
+        b.classList.toggle("sel", on);
+        b.style.background = on ? kindColor(k) : "#fff";
+      });
+      saveBtn.style.background = kindColor(k);
+      saveBtn.style.borderColor = kindColor(k);
+    }
+    Array.prototype.forEach.call(kindBtns, function (b) {
+      b.addEventListener("click", function () { selectKind(b.dataset.kind); });
+    });
+    selectKind(kind);
     var ta = popover.querySelector("textarea");
     ta.focus();
     popover.querySelector(".cancel").addEventListener("click", closePopover);
-    popover.querySelector(".save").addEventListener("click", function () {
+    saveBtn.addEventListener("click", function () {
       var text = ta.value.trim();
       if (!text) { ta.focus(); return; }
-      save(Object.assign({ text: text }, target));
+      save(Object.assign({ text: text, kind: kind }, target));
     });
     ta.addEventListener("keydown", function (ev) {
       if ((ev.metaKey || ev.ctrlKey) && ev.key === "Enter") popover.querySelector(".save").click();
@@ -208,9 +242,11 @@
     closePopover();
     popover = document.createElement("div");
     popover.id = "__ann_pop";
+    var kind = ann.kind || "design";
     popover.innerHTML =
       '<div class="ctx"><b>' + escapeHtml((ann.domPath && ann.domPath[0]) || ann.selector) + "</b>" +
-      (ann.snippet ? " — " + escapeHtml(ann.snippet) : "") + "</div>" +
+      (ann.snippet ? " — " + escapeHtml(ann.snippet) : "") +
+      '<span class="kbadge" style="background:' + kindColor(kind) + '">' + escapeHtml(kind) + "</span></div>" +
       '<div class="saved">' + escapeHtml(ann.text) + "</div>" +
       '<div class="row"><button class="danger del">Delete</button><button class="cancel">Close</button></div>';
     root.appendChild(popover);
@@ -234,7 +270,8 @@
       var pin = document.createElement("div");
       pin.className = "__ann_pin";
       pin.textContent = i + 1;
-      pin.title = ann.text;
+      pin.title = (ann.kind || "design") + ": " + ann.text;
+      pin.style.background = kindColor(ann.kind);
       pin.dataset.id = ann.id;
       pin.addEventListener("click", function (e) {
         e.stopPropagation();

@@ -1,6 +1,14 @@
 {
   "name": "design-studio",
   "private": true,
+  "bin": {
+    "design-annotate": "skills/design-studio/agents/annotate/server.mjs",
+    "design-specs": "skills/design-studio/agents/annotate/build-specs.mjs",
+    "design-studio-init": "skills/design-studio/agents/annotate/init.mjs"
+  },
+  "files": [
+    "skills"
+  ],
   "scripts": {
     "test": "node --test 'skills/design-studio/agents/tests/*.test.mjs'"
   }
